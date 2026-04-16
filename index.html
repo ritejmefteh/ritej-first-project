@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My To-Do App</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(to right, #ff9a9e, #a18cd1);
+    color: white;
+    text-align: center;
+    margin: 0;
+    transition: 0.3s;
+}
+
+.dark {
+    background: #1e1e2f;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    margin-top: 50px;
+}
+
+input, textarea, select {
+    width: 90%;
+    margin: 5px;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.add {
+    background: #fff;
+}
+
+.task {
+    background: rgba(255,255,255,0.2);
+    padding: 15px;
+    margin: 10px;
+    border-radius: 15px;
+    text-align: left;
+}
+
+.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>💗 My To-Do List 💙</h1>
+
+    <input id="title" placeholder="Task title">
+    <textarea id="desc" placeholder="Description"></textarea>
+    <input type="date" id="date">
+
+    <select id="priority">
+        <option>Low</option>
+        <option>Medium</option>
+        <option>High</option>
+    </select>
+
+    <br>
+    <button class="add" onclick="addTask()">Add Task</button>
+    <button onclick="toggleDark()">🌙 Dark Mode</button>
+
+    <div id="tasks"></div>
+</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+function save() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function addTask() {
+    let title = document.getElementById("title").value;
+    let desc = document.getElementById("desc").value;
+    let date = document.getElementById("date").value;
+    let priority = document.getElementById("priority").value;
+
+    if (!title) return alert("Title required!");
+
+    tasks.push({title, desc, date, priority, done:false});
+    save();
+    display();
+}
+
+function display() {
+    let container = document.getElementById("tasks");
+    container.innerHTML = "";
+
+    tasks.forEach((task, index) => {
+        container.innerHTML += `
+        <div class="task ${task.done ? 'completed' : ''}">
+            <h3>${task.title}</h3>
+            <p>${task.desc}</p>
+            <small>${task.date} | ${task.priority}</small><br>
+
+            <button onclick="toggle(${index})">✔</button>
+            <button onclick="editTask(${index})">✏</button>
+            <button onclick="deleteTask(${index})">🗑</button>
+        </div>
+        `;
+    });
+}
+
+function toggle(i) {
+    tasks[i].done = !tasks[i].done;
+    save();
+    display();
+}
+
+function deleteTask(i) {
+    tasks.splice(i,1);
+    save();
+    display();
+}
+
+function editTask(i) {
+    let t = tasks[i];
+
+    document.getElementById("title").value = t.title;
+    document.getElementById("desc").value = t.desc;
+    document.getElementById("date").value = t.date;
+    document.getElementById("priority").value = t.priority;
+
+    deleteTask(i);
+}
+
+function toggleDark() {
+    document.body.classList.toggle("dark");
+}
+
+display();
+</script>
+
+</body>
+</html>
