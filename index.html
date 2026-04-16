@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>My To-Do App</title>
+<title>Life Tracker App</title>
 
 <style>
 body {
@@ -11,17 +11,58 @@ body {
     color: white;
     text-align: center;
     margin: 0;
-    transition: 0.3s;
+    transition: 0.4s;
 }
 
 .dark {
     background: #1e1e2f;
 }
 
+/* LAYOUT */
 .container {
-    max-width: 600px;
+    max-width: 900px;
     margin: auto;
-    margin-top: 50px;
+    margin-top: 30px;
+    display: flex;
+    gap: 20px;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .sidebar {
+        width: 90%;
+    }
+    .main {
+        width: 95%;
+    }
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 200px;
+    background: rgba(255,255,255,0.2);
+    padding: 15px;
+    border-radius: 15px;
+}
+
+.mood {
+    cursor: pointer;
+    margin: 10px 0;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+.mood:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* MAIN */
+.main {
+    flex: 1;
 }
 
 input, textarea, select {
@@ -56,13 +97,50 @@ button {
     text-decoration: line-through;
     opacity: 0.6;
 }
+
+#history {
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+#msg {
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
 </style>
 </head>
 
 <body>
 
+<h1>💗 Life Tracker App 💙</h1>
+
 <div class="container">
-    <h1>💗 My To-Do List 💙</h1>
+
+<!-- ================= MOOD ================= -->
+<div class="sidebar">
+    <h3>Moods</h3>
+
+    <div class="mood" onclick="setMood('Happy 😊')">😊 Happy</div>
+    <div class="mood" onclick="setMood('Sad 😢')">😢 Sad</div>
+    <div class="mood" onclick="setMood('Angry 😡')">😡 Angry</div>
+    <div class="mood" onclick="setMood('Calm 😌')">😌 Calm</div>
+
+    <hr>
+
+    <div class="mood" onclick="setMood('Love ❤️')">❤️ Love</div>
+    <div class="mood" onclick="setMood('Stress 😰')">😰 Stress</div>
+    <div class="mood" onclick="setMood('Anxiety 😟')">😟 Anxiety</div>
+    <div class="mood" onclick="setMood('Cute 🥰')">🥰 Cute</div>
+
+    <p id="result"></p>
+
+    <h4>Mood History</h4>
+    <div id="history"></div>
+</div>
+
+<!-- ================= TO DO ================= -->
+<div class="main">
 
     <input id="title" placeholder="Task title">
     <textarea id="desc" placeholder="Description"></textarea>
@@ -75,13 +153,85 @@ button {
     </select>
 
     <br>
+
     <button class="add" onclick="addTask()">Add Task</button>
     <button onclick="toggleDark()">🌙 Dark Mode</button>
+
+    <p id="msg"></p>
 
     <div id="tasks"></div>
 </div>
 
+</div>
+
 <script>
+
+/* ================= MOOD COLORS ================= */
+function getMoodColor(mood) {
+    switch(mood) {
+        case "Happy 😊": return "#FFD93D";
+        case "Sad 😢": return "#4D96FF";
+        case "Angry 😡": return "#FF6B6B";
+        case "Calm 😌": return "#6BCB77";
+        case "Love ❤️": return "#FF4D6D";
+        case "Stress 😰": return "#6A4C93";
+        case "Anxiety 😟": return "#FF922B";
+        case "Cute 🥰": return "#FFB3C6";
+        default: return "#a18cd1";
+    }
+}
+
+/* ================= MOOD ================= */
+function setMood(mood) {
+    let today = new Date().toDateString();
+
+    let moodData = { mood, date: today };
+
+    localStorage.setItem("moodData", JSON.stringify(moodData));
+
+    let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
+    history.push(moodData);
+    localStorage.setItem("moodHistory", JSON.stringify(history));
+
+    updateMoodUI();
+    showHistory();
+}
+
+function updateMoodUI() {
+    let data = JSON.parse(localStorage.getItem("moodData"));
+    let today = new Date().toDateString();
+
+    if (data && data.date === today) {
+        document.getElementById("result").innerText = "Mood: " + data.mood;
+        document.body.style.background = getMoodColor(data.mood);
+    } else {
+        document.getElementById("result").innerText = "No mood today";
+    }
+}
+
+function showHistory() {
+    let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
+    let box = document.getElementById("history");
+    box.innerHTML = "";
+
+    history.slice().reverse().forEach((item, index) => {
+        box.innerHTML += `
+            <div>
+                ${item.date} → ${item.mood}
+                <button onclick="deleteMood(${index})">🗑</button>
+            </div>
+        `;
+    });
+}
+
+function deleteMood(index) {
+    let history = JSON.parse(localStorage.getItem("moodHistory")) || [];
+    history.splice(index, 1);
+    localStorage.setItem("moodHistory", JSON.stringify(history));
+    showHistory();
+}
+
+/* ================= TO DO ================= */
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
 function save() {
@@ -93,12 +243,29 @@ function addTask() {
     let desc = document.getElementById("desc").value;
     let date = document.getElementById("date").value;
     let priority = document.getElementById("priority").value;
+    let msg = document.getElementById("msg");
 
-    if (!title) return alert("Title required!");
+    if (!title) {
+        msg.innerText = "🔥 Come on! Add a title!";
+        msg.style.color = "yellow";
+        return;
+    }
 
     tasks.push({title, desc, date, priority, done:false});
     save();
     display();
+
+    if (desc && date) {
+        msg.innerText = "💖 Good girl! Task added!";
+        msg.style.color = "#00ffb3";
+    } else {
+        msg.innerText = "🔥 Nice! Try adding more details!";
+        msg.style.color = "#ffd93d";
+    }
+
+    document.getElementById("title").value = "";
+    document.getElementById("desc").value = "";
+    document.getElementById("date").value = "";
 }
 
 function display() {
@@ -124,6 +291,16 @@ function toggle(i) {
     tasks[i].done = !tasks[i].done;
     save();
     display();
+
+    let msg = document.getElementById("msg");
+
+    if (tasks[i].done) {
+        msg.innerText = "💖 Good girl! Task completed!";
+        msg.style.color = "#00ffb3";
+    } else {
+        msg.innerText = "🔥 Keep going!";
+        msg.style.color = "#ffd93d";
+    }
 }
 
 function deleteTask(i) {
@@ -143,11 +320,16 @@ function editTask(i) {
     deleteTask(i);
 }
 
+/* ================= DARK MODE ================= */
 function toggleDark() {
     document.body.classList.toggle("dark");
 }
 
+/* ================= INIT ================= */
+updateMoodUI();
+showHistory();
 display();
+
 </script>
 
 </body>
